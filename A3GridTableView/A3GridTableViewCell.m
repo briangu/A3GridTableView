@@ -37,6 +37,9 @@
 
 
 #import "A3GridTableViewCell.h"
+#import <QuartzCore/QuartzCore.h>
+#import <CoreGraphics/CGColor.h>
+#import "FXLabel.h"
 
 @implementation A3GridTableViewCell
 
@@ -47,30 +50,30 @@
     self = [super init];
     if (self) {
         // Set the reuseIdentifier
-        _reuseIdentifier = [reuseIdentifier retain];
+        _reuseIdentifier = SAFE_ARC_RETAIN(reuseIdentifier);
         
         // set up contentView
-        self.contentView = [[[UIView alloc] initWithFrame:self.bounds] autorelease];
+        self.contentView = SAFE_ARC_AUTORELEASE([[UIView alloc] initWithFrame:self.bounds]);
         self.contentView.backgroundColor = [UIColor clearColor];
         
         // set up Background
-        self.backgroundView = [[[UIView alloc] initWithFrame:self.bounds] autorelease];
+        self.backgroundView = SAFE_ARC_AUTORELEASE([[UIView alloc] initWithFrame:self.bounds]);
         self.backgroundView.backgroundColor = [UIColor clearColor];
         
         // set up selected BG
-        self.selectedBackgroundView = [[[UIView alloc] initWithFrame:self.bounds] autorelease];
+        self.selectedBackgroundView = SAFE_ARC_AUTORELEASE([[UIView alloc] initWithFrame:self.bounds]);
         self.selectedBackgroundView.backgroundColor = [UIColor clearColor];
         
         // set up highlighted BG
-        self.highlightedBackgroundView  = [[[UIView alloc] initWithFrame:self.bounds] autorelease];
+        self.highlightedBackgroundView  = SAFE_ARC_AUTORELEASE([[UIView alloc] initWithFrame:self.bounds]);
         self.highlightedBackgroundView.backgroundColor = [UIColor clearColor];
         
         // set up titleLabel
-        self.titleLabel = [[[UILabel alloc] init] autorelease];
-        self.titleLabel.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+        self.titleLabel = SAFE_ARC_AUTORELEASE([[UILabel alloc] init]);
+        //self.titleLabel.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
         self.titleLabel.backgroundColor = [UIColor clearColor];
-        self.titleLabel.baselineAdjustment = UIBaselineAdjustmentAlignCenters;
-        self.titleLabel.textAlignment = UITextAlignmentLeft;
+        //self.titleLabel.baselineAdjustment = UIBaselineAdjustmentAlignCenters;
+        //self.titleLabel.textAlignment = UITextAlignmentLeft;
         
         [self.contentView addSubview: self.titleLabel];
         
@@ -79,17 +82,27 @@
     return self;
 }
 
+- (void)transitionImage:(UIImage *)newImage {
+    [UIView transitionWithView:self.backgroundView
+                      duration:1.0f
+                       options:UIViewAnimationOptionTransitionCurlDown //UIViewAnimationOptionTransitionCrossDissolve
+                    animations:^{
+                        ((UIImageView*)self.backgroundView).image = newImage;
+                    } completion:NULL];
+}
+
 - (void)dealloc{
-    [_titleLabel release];
-    [_reuseIdentifier release];
+    SAFE_ARC_RELEASE(_titleLabel);
+    SAFE_ARC_RELEASE(_reuseIdentifier);
+/*
     [_backgroundView release];
     [_contentView release];
     [_selectedBackgroundView release];
     [_highlightedBackgroundView release];
     [_reuseIdentifier release];
     [_indexPath release];
-    
-    [super dealloc];
+ [super dealloc];
+ */
 }
 
 
@@ -102,9 +115,30 @@
 - (void)setFrame:(CGRect)frame{
     [super setFrame:frame];
     
+    int xMargin = 3;
+    int yMargin = 3;
+
+//    UIImageView *img = ((UIImageView*)_backgroundView);
+    //xMargin = (self.bounds.size.width - img.image.size.width) / 2 + 3;
+    //yMargin = (self.bounds.size.height - img.image.size.height) / 2 + 3;
+
+    _backgroundView.frame = CGRectMake(xMargin, yMargin, self.bounds.size.width - 2*xMargin, self.bounds.size.height - 2*yMargin);
+    
     // update title label
-    _titleLabel.frame = CGRectMake(10.0f, 0.0f, _contentView.bounds.size.width - 10.0f, _contentView.bounds.size.height);
-    _titleLabel.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+    int textXMargin = 14;
+    int textYMargin = 8;
+    _titleLabel.frame = CGRectMake(textXMargin, textYMargin, _contentView.bounds.size.width - 2*textXMargin, _contentView.bounds.size.height - 2*textYMargin);
+    _titleLabel.textColor = [UIColor whiteColor];
+    _titleLabel.textAlignment = UITextAlignmentLeft;
+    _titleLabel.font = [UIFont fontWithName:@"HelveticaNeue-Medium" size:16.0];
+    
+    _titleLabel.shadowColor = [UIColor colorWithWhite:0.0f alpha:0.8f];
+    _titleLabel.shadowOffset = CGSizeMake(1.0f, 2.0f);
+    
+    [_titleLabel setNumberOfLines:0];
+    [_titleLabel sizeToFit];
+    _titleLabel.center = CGPointMake(floor(_titleLabel.center.x), floor(_titleLabel.center.y));
+    _titleLabel.frame = CGRectIntegral(_titleLabel.frame);
 }
 
 - (void)setSelected:(BOOL)selected{
@@ -144,12 +178,10 @@
 - (void)setBackgroundView:(UIView *)backgroundView{
     [_backgroundView removeFromSuperview];
     
-    [backgroundView retain];
-    [_backgroundView release];
     _backgroundView = backgroundView;
-    
-    _backgroundView.frame = self.bounds;
-    _backgroundView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+//    _backgroundView.frame = self.bounds;
+//    _backgroundView.autoresizingMask = UIViewAutoresizingFlexibleHeight;// | UIViewAutoresizingFlexibleWidth;
+    _backgroundView.backgroundColor = [UIColor clearColor];
     
     [self addSubview: _backgroundView];
     [self sendSubviewToBack:_backgroundView];
@@ -158,28 +190,22 @@
 - (void)setContentView:(UIView *)contentView{
     [_contentView removeFromSuperview];
     
-    [contentView retain];
-    [_contentView release];
     _contentView = contentView;
-    
     _contentView.frame = self.bounds;
     _contentView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
     _contentView.backgroundColor = [UIColor clearColor];
     
     [self addSubview: _contentView];
     [self bringSubviewToFront:_contentView];
+    [self bringSubviewToFront:_titleLabel];
 }
 
 - (void)setSelectedBackgroundView:(UIView *)selectedBackgroundView{
     [_selectedBackgroundView removeFromSuperview];
     
-    [selectedBackgroundView retain];
-    [_selectedBackgroundView release];
     _selectedBackgroundView = selectedBackgroundView;
-    
     _selectedBackgroundView.frame = self.bounds;
     _selectedBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-    
     _selectedBackgroundView.alpha = 0.0f;
     
     [self insertSubview:_selectedBackgroundView aboveSubview:_backgroundView];
@@ -188,13 +214,9 @@
 - (void)setHighlightedBackgroundView:(UIView *)highlightedBackgroundView{
     [_highlightedBackgroundView removeFromSuperview];
     
-    [highlightedBackgroundView retain];
-    [_highlightedBackgroundView release];
     _highlightedBackgroundView = highlightedBackgroundView;
-    
     _highlightedBackgroundView.frame = self.bounds;
     _highlightedBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-    
     _highlightedBackgroundView.alpha = 0.0f;
     
     [self insertSubview:_highlightedBackgroundView aboveSubview:_selectedBackgroundView];

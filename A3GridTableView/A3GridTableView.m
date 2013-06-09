@@ -49,8 +49,8 @@
     
     //=======================================================
     // Datasource and delegate
-    id<A3GridTableViewDataSource> _dataSource;
-    id<A3GridTableViewDelegate> _delegateGridTableView;
+    id<A3GridTableViewDataSource> __unsafe_unretained _dataSource;
+    id<A3GridTableViewDelegate> __unsafe_unretained _delegateGridTableView;
     
     //=======================================================
     // visible Cells
@@ -175,7 +175,7 @@
     [super setDelegate:self];
     
     // paging
-    _pagingPosition = A3GridTableViewCellAlignmentCenter;
+    _pagingPosition = A3GridTableViewCellAlignmentLeft;
     self.gridTableViewPagingEnabled = NO;
     
     // selection
@@ -189,14 +189,14 @@
 - (void)dealloc{
     
     // unused Item Containers
-    [_visibleHeaders release];
-    [_visibleCells release];
-    [_visibleIndexPaths release];
-    [_visibleSectionIndexPaths release];
+    SAFE_ARC_RELEASE(_visibleHeaders);
+    SAFE_ARC_RELEASE(_visibleCells);
+    SAFE_ARC_RELEASE(release);
+    SAFE_ARC_RELEASE(_visibleSectionIndexPaths);
     
     // unused Item Containers
-    [_unusedHeaders release];
-    [_unusedCells release];
+    SAFE_ARC_RELEASE(_unusedHeaders);
+    SAFE_ARC_RELEASE(_unusedCells);
     
     // layout helper
     [self freeSectionWidths];
@@ -205,9 +205,9 @@
     free(numberOfRowsInSection);
     
     // selection
-    [_selectedIndexPaths release];
+    SAFE_ARC_RELEASE(_selectedIndexPaths);
     
-    [super dealloc];
+    //[super dealloc];
 }
 
 //======================================
@@ -515,7 +515,11 @@
                 height = 44.0f;
             
             // set the frame
-            _cellFrames[i][j] = (CGRect){originX, originY+offsetYForHeader, width, height};
+            int xmargin = 0;
+            int ymargin = 0;
+            int xoffset = 4;
+            int yoffset = 4;
+            _cellFrames[i][j] = (CGRect){originX + xoffset, originY+offsetYForHeader + yoffset, width - 2 * xmargin, height - 2 * ymargin};
             
             // update originY
             originY += height;
@@ -690,9 +694,8 @@
         return;
     
     // memory stuff
-    [aDataSource retain];
-    [_dataSource release];
-    _dataSource = aDataSource;
+    SAFE_ARC_RELEASE(_dataSource);
+    _dataSource = SAFE_ARC_RETAIN(aDataSource);
     
     // reload data
     [self reloadData];
@@ -703,9 +706,8 @@
 - (void)setDelegate:(id<A3GridTableViewDelegate>)aDelegate{
     
     // memory stuff
-    [aDelegate retain];
-    [_delegateGridTableView release];
-    _delegateGridTableView = aDelegate;
+    SAFE_ARC_RELEASE(_delegateGridTableView);
+    _delegateGridTableView = SAFE_ARC_RETAIN(aDelegate);
     
     // set scrollviewDelegate
     [super setDelegate:nil];
@@ -761,6 +763,12 @@
             
             // highlighted cell
             [cell setHighlighted:YES animated:YES];
+            
+            // TODO: call callback for cell
+            NSLog([cell titleLabel].text);
+            if (cell.onTapped != NULL) {
+                cell.onTapped(cell, 1);
+            }
             
             // ignore others when header was selected
             break;
@@ -866,7 +874,7 @@
     
     // get headerCell from set if set exists
     if (setFromReuseIdentifier) {
-        headerToDequeue = [[setFromReuseIdentifier anyObject] retain];
+        headerToDequeue = SAFE_ARC_RETAIN([setFromReuseIdentifier anyObject]);
         if (headerToDequeue)
             [setFromReuseIdentifier removeObject:headerToDequeue];
     }
@@ -875,7 +883,7 @@
     [headerToDequeue prepareForReuse];
     
     // return dequeued header
-    return [headerToDequeue autorelease];
+    return SAFE_ARC_AUTORELEASE(headerToDequeue);
 }
 
 ///////////////
@@ -890,7 +898,7 @@
     
     // get cell from set if set exists
     if (setFromReuseIdentifier) {
-        cellToDequeue = [[setFromReuseIdentifier anyObject] retain];
+        cellToDequeue = SAFE_ARC_RETAIN([setFromReuseIdentifier anyObject]);
         if (cellToDequeue)
             [setFromReuseIdentifier removeObject:cellToDequeue];
     }
@@ -899,7 +907,7 @@
     [cellToDequeue prepareForReuse];
     
     // return dequeued cell
-    return [cellToDequeue autorelease];
+    return SAFE_ARC_AUTORELEASE(cellToDequeue);
 }
 
 
@@ -918,7 +926,7 @@
     if (headerCell.reuseIdentifier) {
         
         // get Set for reuse identifier
-        NSMutableSet *setFromIdentifier = [[_unusedHeaders objectForKey:headerCell.reuseIdentifier] retain];
+        NSMutableSet *setFromIdentifier = SAFE_ARC_RETAIN([_unusedHeaders objectForKey:headerCell.reuseIdentifier]);
         
         // make new set if there is none
         if (!setFromIdentifier) {
@@ -933,7 +941,7 @@
         [setFromIdentifier addObject:headerCell];
         
         // clean
-        [setFromIdentifier release];
+        SAFE_ARC_RELEASE(setFromIdentifier);
     }
 }
 
@@ -950,7 +958,7 @@
     if (cell.reuseIdentifier) {
         
         // get Set for reuse identifier
-        NSMutableSet *setFromIdentifier = [[_unusedCells objectForKey:cell.reuseIdentifier] retain];
+        NSMutableSet *setFromIdentifier = SAFE_ARC_RETAIN([_unusedCells objectForKey:cell.reuseIdentifier]);
         
         // make new set if there is none
         if (!setFromIdentifier) {
@@ -965,7 +973,7 @@
         [setFromIdentifier addObject:cell];
         
         // clean
-        [setFromIdentifier release];
+        SAFE_ARC_RELEASE(setFromIdentifier);
     }
 }
 
@@ -1132,7 +1140,7 @@
         }
     }
     
-    return [indexPaths autorelease];
+    return SAFE_ARC_AUTORELEASE(indexPaths);
 }
 
 - (NSArray *)indexPathsForVisibleRect{
@@ -1162,7 +1170,7 @@
         posX += _sectionWidths[i];
     }
     
-    return [indexPaths autorelease];
+    return SAFE_ARC_AUTORELEASE(indexPaths);
 }
 
 - (NSArray *)indexPathsForVisibleSections{
